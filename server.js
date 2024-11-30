@@ -1,4 +1,10 @@
 import express from "express"
+import pg from "pg"
+import dotenv from "dotenv"
+
+dotenv.config()
+
+const {Client} = pg
 
 const app = express()
 
@@ -8,6 +14,22 @@ app.use(express.urlencoded({extended: true}))
 app.listen(3001, () => {
   console.log('Server is running!');  
 })
+
+const client = new Client()
+
+connectDB()
+
+async function connectDB() {
+
+  try {
+    await client.connect()
+    console.log('Database connected...');
+    
+  } catch (error) {
+    console.log(error.message);    
+  }
+  
+}
 
 app.get('/', (req, res) => {
   res.send('Welcome to the Movie API');
