@@ -38,7 +38,7 @@ app.get('/', (req, res) => {
 app.post('/genres', (req, res) => {
   const name = req.body.name
 
-  res.status(201).send({ message: `Genre ${name} endpoint reached.` })
+  res.status(201).json({ id: 1, name })
 })
 
 app.post('/movie', (req, res) => {
@@ -46,7 +46,7 @@ app.post('/movie', (req, res) => {
   const year = req.body.year
   const genreId = req.body.genreId
 
-  res.status(200).send({ message: `Movie ${name} (${year}) with genreId ${genreId} endpoint reached.` })
+  res.status(201).json({ id: 1, name, year, genreId })
 })
 
 app.post('/register', (req, res) => {
@@ -55,13 +55,13 @@ app.post('/register', (req, res) => {
   const password = req.body.password
   const birthYear = req.body.birthYear
 
-  res.status(201).send({ message: `User ${name} with username ${username} endpoint reached.` })
+  res.status(201).json({ id: 1, name, username, birthYear })
 })
 
 app.get('/movie/:id', (req, res) => {
   const id = req.params.id
 
-  res.status(200).send({ message: `Fetched movie with ID: ${id}` })
+  res.status(200).json({ id, name: "Example Movie", year: 2000, genreId: 1 })
 })
 
 app.delete('/movie/:id', (req, res) => {
@@ -75,17 +75,17 @@ app.get('/movies', (req, res) => {
     {
       name: "Batman",
       year: 1989,
-      genreId: "1"
+      genreId: 1
     },
     {
       name: "The Shawshank Redemption",
       year: 1994,
-      genreId: "2"
+      genreId: 2
     },
     {
       name: "The Godfather",
       year: 1972,
-      genreId: "2"
+      genreId: 2
     }
   ];
 
@@ -95,7 +95,9 @@ app.get('/movies', (req, res) => {
 app.get('/movie', (req, res) => {
   const keyword = req.query.keyword
 
-  res.status(200).send({ message: `Searched movies with keyword: ${keyword}` })
+  res.status(200).json([
+    { id: 1, name: `Movie matching "${keyword}"`, year: 1990, genreId: 1 },
+  ])
 })
 
 app.post('/review', (req, res) => {
@@ -104,18 +106,21 @@ app.post('/review', (req, res) => {
   const stars = req.body.stars
   const desc = req.body.desc
 
-  res.status(201).send({ message: `Review added by ${username} for movie ${movieId} with ${stars} stars.` })
+  res.status(201).json({ id: 1, username, movieId, stars, desc })
 })
 
 app.post('/favorite', (req, res) => {
   const username = req.body.username
   const movieId = req.body.movieId
 
-  res.status(201).send({ message: `Movie ${movieId} added to ${username}'s favorites.` })
+  res.status(201).json({ id: 1, username, movieId })
 })
 
 app.get('/favorites', (req, res) => {
   const username = req.query.username
 
-  res.status(200).send({ message: `Fetched favorites for username: ${username}` })
+  res.status(200).json([
+    { id: 1, movieId: 1, username },
+    { id: 2, movieId: 2, username },
+  ])
 })
