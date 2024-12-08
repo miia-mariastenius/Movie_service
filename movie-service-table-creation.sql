@@ -17,15 +17,15 @@ CREATE TABLE movie (
     title VARCHAR(255) NOT NULL,
     year INT NOT NULL,
     genre_id INT NOT NULL,
-    FOREIGN KEY (genre_id) REFERENCES movie_genre(id)
+    FOREIGN KEY (genre_id) REFERENCES movie_genre(id) ON DELETE CASCADE
 );
 
 CREATE TABLE favorite_movie (
     user_id INT NOT NULL,
     movie_id INT NOT NULL,
     PRIMARY KEY (user_id, movie_id),
-    FOREIGN KEY (user_id) REFERENCES movie_user(id),
-    FOREIGN KEY (movie_id) REFERENCES movie(id)
+    FOREIGN KEY (user_id) REFERENCES movie_user(id) ON DELETE CASCADE,
+    FOREIGN KEY (movie_id) REFERENCES movie(id) ON DELETE CASCADE
 );
 
 CREATE TABLE movie_review (
@@ -34,6 +34,6 @@ CREATE TABLE movie_review (
     movie_id INT NOT NULL,
     stars INT CHECK (stars >= 1 AND stars <= 5),
     review_text TEXT,
-    FOREIGN KEY (user_id) REFERENCES movie_user(id),
-    FOREIGN KEY (movie_id) REFERENCES movie(id)
+    FOREIGN KEY (user_id) REFERENCES movie_user(id) ON DELETE CASCADE,
+    FOREIGN KEY (movie_id) REFERENCES movie(id) ON DELETE CASCADE
 );
