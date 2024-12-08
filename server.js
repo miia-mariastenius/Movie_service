@@ -12,7 +12,7 @@ app.use(express.json())
 app.use(express.urlencoded({extended: true}))
 
 app.listen(3001, () => {
-  console.log('Server is running!');  
+  console.log('Server is running!')
 })
 
 const client = new Client()
@@ -23,104 +23,136 @@ async function connectDB() {
 
   try {
     await client.connect()
-    console.log('Database connected...');
+    console.log('Database connected...')
     
   } catch (error) {
-    console.log(error.message);    
+    console.log(error.message)
   }
   
 }
 
 app.get('/', (req, res) => {
-  res.send('Welcome to the Movie API');
-});
-
-app.post('/genres', (req, res) => {
-  const name = req.body.name
-
-  res.status(201).json({ id: 1, name })
+  res.send('Welcome to the Movie API')
 })
 
-app.post('/movie', (req, res) => {
+// Add a new genre
+app.post("/genres", async (req, res) => {
   const name = req.body.name
-  const year = req.body.year
-  const genreId = req.body.genreId
-
-  res.status(201).json({ id: 1, name, year, genreId })
+  const result = await client.query(
+    "INSERT INTO movie_genre (genre_name) VALUES ($1) RETURNING *",
+    [name]
+  )
+  res.status(201).json(result.rows[0])
 })
 
-app.post('/register', (req, res) => {
-  const name = req.body.name
-  const username = req.body.username
-  const password = req.body.password
-  const birthYear = req.body.birthYear
-
-  res.status(201).json({ id: 1, name, username, birthYear })
+// Add a new movie
+app.post("/movie", async (req, res) => {
+  const { name, year, genreId } = req.body
+  const result = await client.query(
+    "INSERT INTO movie (title, year, genre_id) VALUES ($1, $2, $3) RETURNING *",
+    [name, year, genreId]
+  )
+  res.status(201).json(result.rows[0])
 })
 
-app.get('/movie/:id', (req, res) => {
+// Register a new user
+app.post("/register", async (req, res) => {
+  const { name, username, password, birthYear } = req.body
+  const result = await client.query(
+    "INSERT INTO movie_user (name, username, password, year_of_birth) VALUES ($1, $2, $3, $4) RETURNING *",
+    [name, username, password, birthYear]
+  )
+  res.status(201).json(result.rows[0])
+})
+
+// Get a movie by ID
+app.get("/movie/:id", async (req, res) => {
   const id = req.params.id
-
-  res.status(200).json({ id, name: "Example Movie", year: 2000, genreId: 1 })
+  const result = await client.query("SELECT * FROM movie WHERE id = $1", [id])
+  res.status(200).json(result.rows[0])
 })
 
-app.delete('/movie/:id', (req, res) => {
+// Delete a movie by ID
+app.delete("/movie/:id", async (req, res) => {
   const id = req.params.id
-
-  res.status(200).send({ message: `Deleted movie with ID: ${id}` });
+  try {
+    await client.query('DELETE FROM movies WHERE id = $1', [id])
+    res.status(200).send({ message: `Deleted movie with ID: ${id}` })
+  } catch (error) {
+    console.error(error.message)
+    res.status(500).json({ error: "Failed to delete movie" })
+  }
 })
 
-app.get('/movies', (req, res) => {
-  const movies = [
-    {
-      name: "Batman",
-      year: 1989,
-      genreId: 1
-    },
-    {
-      name: "The Shawshank Redemption",
-      year: 1994,
-      genreId: 2
-    },
-    {
-      name: "The Godfather",
-      year: 1972,
-      genreId: 2
-    }
-  ];
-
-  res.status(200).json(movies);
+// Get all movies
+app.get("/movies", async (req, res) => {
+  const result = await client.query("SELECT * FROM movie")
+  res.status(200).json(result.rows)
 })
 
-app.get('/movie', (req, res) => {
+// Search movies by a keyword
+app.get("/movie", async (req, res) => {
   const keyword = req.query.keyword
-
-  res.status(200).json([
-    { id: 1, name: `Movie matching "${keyword}"`, year: 1990, genreId: 1 },
-  ])
+  const result = await client.query(
+    "SELECT * FROM movie WHERE title ILIKE $1",
+    [`%${keyword}%`]
+  )
+  res.status(200).json(result.rows)
 })
 
-app.post('/review', (req, res) => {
-  const username = req.body.username
-  const movieId = req.body.movieId
-  const stars = req.body.stars
-  const desc = req.body.desc
+// Add a review
+app.post("/review", async (req, res) => {
+  const { username, movieId, stars, desc } = req.body
 
-  res.status(201).json({ id: 1, username, movieId, stars, desc })
+  // Find user ID by username
+  const userResult = await client.query(
+    "SELECT id FROM movie_user WHERE username = $1",
+    [username]
+  )
+  const userId = userResult.rows[0].id
+
+  // Insert review into the database
+  const result = await client.query(
+    "INSERT INTO movie_review (user_id, movie_id, stars, review_text) VALUES ($1, $2, $3, $4) RETURNING *",
+    [userId, movieId, stars, desc]
+  )
+  res.status(201).json(result.rows[0])
 })
 
-app.post('/favorite', (req, res) => {
-  const username = req.body.username
-  const movieId = req.body.movieId
+// Add a movie to favorites
+app.post("/favorite", async (req, res) => {
+  const { username, movieId } = req.body
 
-  res.status(201).json({ id: 1, username, movieId })
+  // Find user ID by username
+  const userResult = await client.query(
+    "SELECT id FROM movie_user WHERE username = $1",
+    [username]
+  )
+  const userId = userResult.rows[0].id
+
+  // Add favorite movie to the database
+  const result = await client.query(
+    "INSERT INTO favorite_movie (user_id, movie_id) VALUES ($1, $2) RETURNING *",
+    [userId, movieId]
+  )
+  res.status(201).json(result.rows[0])
 })
 
-app.get('/favorites', (req, res) => {
+// Get all favorite movies for a user
+app.get("/favorites", async (req, res) => {
   const username = req.query.username
 
-  res.status(200).json([
-    { id: 1, movieId: 1, username },
-    { id: 2, movieId: 2, username },
-  ])
+  // Find user ID by username
+  const userResult = await client.query(
+    "SELECT id FROM movie_user WHERE username = $1",
+    [username]
+  )
+  const userId = userResult.rows[0].id
+
+  // Fetch favorite movies
+  const result = await client.query(
+    "SELECT movie.* FROM favorite_movie JOIN movie ON favorite_movie.movie_id = movie.id WHERE favorite_movie.user_id = $1",
+    [userId]
+  )
+  res.status(200).json(result.rows)
 })
